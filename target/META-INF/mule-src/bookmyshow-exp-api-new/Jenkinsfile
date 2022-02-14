@@ -1,0 +1,21 @@
+pipeline {
+  agent any
+  stages {
+    stage('Build') {
+      steps {
+           echo "build success"
+      }
+    }
+    stage('Test') {
+      steps {
+          echo "mvn test starts"
+      }
+    }
+    stage('Deploy Development') {
+      steps {
+            bat "mvn clean package deploy -DmuleVersion=4.4.0 -Dusername=Smit_Feb22 -Dpassword=Reyansh@2019  -DapplicationName=bmsExp -Denvironment=Sandbox -Dworkers=1 -DworkerType=Micro -Danypoint.platform.client_id=6c95b24a15be45278cc4ea451f1939d9   -Danypoint.platform.client_secret=92D72fD87a7b4554A80A3A9CBB99576d -DmuleDeploy"
+            echo "deploy success"
+      }
+    }
+  }
+}

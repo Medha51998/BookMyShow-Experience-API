@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd ">
+    <http:listener-config name="bms_exp_api-httpListenerConfig">
+        <http:listener-connection host="0.0.0.0" port="8080" />
+    </http:listener-config>
+    <apikit:config name="bms_exp_api-config" api="bms_exp_api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="cc6b4ee7-9623-4725-9e88-c9d23be1c955" >
+		<http:request-connection host="bms.us-e2.cloudhub.io" />
+	</http:request-config>
+	<flow name="bms_exp_api-main">
+        <http:listener config-ref="bms_exp_api-httpListenerConfig" path="/api/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="bms_exp_api-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:BAD_REQUEST">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Bad request"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">400</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:METHOD_NOT_ALLOWED">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Method not allowed"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">405</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_ACCEPTABLE">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not acceptable"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">406</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:UNSUPPORTED_MEDIA_TYPE">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Unsupported media type"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">415</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_IMPLEMENTED">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not Implemented"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">501</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="bms_exp_api-console">
+        <http:listener config-ref="bms_exp_api-httpListenerConfig" path="/console/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="bms_exp_api-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="put:\movies:bms_exp_api-config">
+         <logger level="INFO" doc:name="Before call" doc:id="43ee1f70-ffb1-4f49-a75e-4e246ef02799" message="Experience API accessing put movies"/>
+		<http:request method="PUT" doc:name="call process API" doc:id="30c92a7b-f629-42ad-a3da-72c4e2677242" path="/api/movies" config-ref="HTTP_Request_configuration">
+			<http:headers ><![CDATA[#[output application/java
+---
+{
+	client_secret : "f285ab05d02b4f37b1409bfcffdcdecc",
+	client_id : "ED20687772D14485b0a781b6b36897a8"
+}]]]></http:headers>
+			<http:query-params ><![CDATA[#[output application/java
+---
+{
+	city : attributes.queryParams.city,
+	("language" : attributes.queryParams.language) if (attributes.queryParams.language != null),
+}]]]></http:query-params>
+		</http:request>
+		<logger level="INFO" doc:name="After process API" doc:id="8adb7abc-d6a4-45f9-aecd-291513503a0c" message="Message fetched !"/>
+    </flow>
+    <flow name="delete:\movies:bms_exp_api-config">
+        <logger level="INFO" doc:name="Before call" doc:id="dcd62f10-c54c-4fd0-b5ca-b240a0f148ca" message="Started flow"/>
+		<http:request method="DELETE" doc:name="Request" doc:id="6e069862-3f87-482b-89fc-52001d7e5cc5" path="/api/movies" config-ref="HTTP_Request_configuration">
+			<http:headers ><![CDATA[#[output application/java
+---
+{
+	client_secret : "f285ab05d02b4f37b1409bfcffdcdecc",
+	client_id : "ED20687772D14485b0a781b6b36897a8"
+}]]]></http:headers>
+			<http:query-params ><![CDATA[#[output application/java
+---
+{
+	city : attributes.queryParams.city,
+	("language" : attributes.queryParams.language) if (attributes.queryParams.language != null),
+}]]]></http:query-params>
+		</http:request>
+		<logger level="INFO" doc:name="After Process API" doc:id="919e8dee-79f9-4739-92e9-15781696f5b2" message="Movie Deleted"/>
+    </flow>
+    <flow name="patch:\order:bms_exp_api-config">
+        <logger level="INFO" doc:name="Before call" doc:id="8dc47d77-06a9-475e-b477-f76f37b99159" message="Starting"/>
+		<http:request method="PATCH" doc:name="call process api/cancel movie" doc:id="8a1088d6-6b9d-4d37-952c-99a6af061782" path="/api/order" config-ref="HTTP_Request_configuration">
+			<http:headers ><![CDATA[#[output application/java
+---
+{
+	client_secret : "f285ab05d02b4f37b1409bfcffdcdecc",
+	client_id : "ED20687772D14485b0a781b6b36897a8"
+}]]]></http:headers>
+			<http:query-params ><![CDATA[#[output application/java
+---
+{
+	city : attributes.queryParams.city,
+	("language" : attributes.queryParams.language) if (attributes.queryParams.language != null),
+}]]]></http:query-params>
+		</http:request>
+		<logger level="INFO" doc:name="After process API" doc:id="2fba5892-262d-4f15-b0c5-a8e15e088421" message="#[payload]"/>
+    </flow>
+    <flow name="get:\movies:bms_exp_api-config">
+         <logger level="INFO" doc:name="Before process API" doc:id="de3db143-2c89-40f7-81af-c42d8487b96c" message="Started"/>
+		<http:request method="GET" doc:name="call process api" doc:id="65c444b4-11c0-4e06-ad2a-ba1704f82e5f" path="/api/movies" config-ref="HTTP_Request_configuration">
+			<http:headers><![CDATA[#[output application/java
+---
+{
+	client_secret : "f285ab05d02b4f37b1409bfcffdcdecc",
+	client_id : "ED20687772D14485b0a781b6b36897a8"
+}]]]></http:headers>
+			<http:query-params><![CDATA[#[output application/java
+---
+{
+	city : attributes.queryParams.city,
+	("language" : attributes.queryParams.language) if (attributes.queryParams.language != null),
+}]]]></http:query-params>
+		</http:request>
+    </flow>
+    <flow name="post:\order:bms_exp_api-config">
+        <logger level="INFO" doc:name="before call" doc:id="0a6f9188-d1f1-4cb8-af66-679bdc181c05" message="starting"/>
+		<http:request method="POST" doc:name="call process api" doc:id="69173b63-7bc8-4ef2-ab03-374623b26fd3" path="/api/order" config-ref="HTTP_Request_configuration">
+			<http:headers ><![CDATA[#[output application/java
+---
+{
+	client_secret : "f285ab05d02b4f37b1409bfcffdcdecc",
+	client_id : "ED20687772D14485b0a781b6b36897a8"
+}]]]></http:headers>
+			<http:query-params ><![CDATA[#[output application/java
+---
+{
+	city : attributes.queryParams.city,
+	("language" : attributes.queryParams.language) if (attributes.queryParams.language != null),
+}]]]></http:query-params>
+		</http:request>
+    </flow>
+</mule>
